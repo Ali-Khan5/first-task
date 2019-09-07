@@ -105,17 +105,27 @@ function DOMtoXPATH(document_root) {
   var pagesToLoop = pagesNumbersRow[pagesNumbersRow.length - 2].innerText;
 
   console.log(pagesToLoop);
-
+  function GiveBackUrl(url){
+    var queryUrl="";
+    if(url.search.lastIndexOf('&page')){
+      queryUrl=url.search.slice(0,url.search.lastIndexOf('&page'));
+    }
+    else{
+      queryUrl=url.search;
+    }
+    console.log('our URL IS',queryUrl)
+    return queryUrl;
+  }
   function download(filename, text) {
     var element = document.createElement("a");
     // all this is so data appears in a clean way when opened in a text editor
-    let plainText="";
-    text.map(x=>{
-      plainText+=`Name: ${x.UserName},
-      Profile-Link:${ x.link},
+    let plainText = "";
+    text.map(x => {
+      plainText += `Name: ${x.UserName},
+      Profile-Link:${x.link},
       Img-Link:${x.img},
-      Location:${x.location},  \n \n \t`
-    })
+      Location:${x.location},  \n \n \t`;
+    });
     element.setAttribute(
       "href",
       "data:text/plain;charset=utf-8," + encodeURIComponent(plainText)
@@ -137,12 +147,13 @@ function DOMtoXPATH(document_root) {
   var buttonToClick = $('*[class^="malt-pagination-Pagination-link-"]')[
     $(paginationClass).length - 1
   ];
+  var pageNation = 1;
   for (i = 1; i <= pagesToLoop; i++) {
     setTimeout(function() {
       console.log("Will wait for 5 seconds", buttonToClick);
       // gathers the data through the given API
       fetch(
-        `https://www.xing.com/search/api/results/members?keywords=appl&page=${i}`,
+        `https://www.xing.com/search/api/results/members${GiveBackUrl(window.location)}&page=${pageNation}`,
         {
           credentials: "include",
           headers: {
@@ -152,7 +163,7 @@ function DOMtoXPATH(document_root) {
             "sec-fetch-mode": "cors",
             "sec-fetch-site": "same-origin"
           },
-          referrer: `https://www.xing.com/search/members?keywords=appl&page=${i}`,
+          referrer: `https://www.xing.com/search/members${GiveBackUrl(window.location)}&page=${pageNation}`,
           referrerPolicy: "no-referrer-when-downgrade",
           body: null,
           method: "GET",
@@ -165,28 +176,27 @@ function DOMtoXPATH(document_root) {
           // Prints result from `response.json()` in getRequest
           // checks if our arrayOfObject is less than 50
           if (UserInfo.length < 50) {
-          for (var k = 0; k < data.items.length; k++) {
-            if (UserInfo.length < 50) {
-              var dataToBeStored = {
-                UserName: data.items[k].display_name,
-                link: data.items[k].link,
-                img: data.items[k].image,
-                location: data.items[k].location
-              };
-             
+            for (var k = 0; k < data.items.length; k++) {
+              if (UserInfo.length < 50) {
+                var dataToBeStored = {
+                  UserName: data.items[k].display_name,
+                  link: data.items[k].link,
+                  img: data.items[k].image,
+                  location: data.items[k].location
+                };
+
                 UserInfo.push(dataToBeStored);
-              
-            } else {
-              // downloads our data in a txt file :D 
-              download("collectedData.txt",UserInfo);
-              break;
+              } else {
+                // downloads our data in a txt file :D
+                download("collectedData.txt", UserInfo);
+                break;
+              }
             }
-          
-          }
           }
           console.log("collected data", UserInfo);
         })
         .catch(error => console.error(error));
+      pageNation++;
 
       if (
         $('*[class^="malt-pagination-Pagination-link-"]')[
@@ -197,9 +207,7 @@ function DOMtoXPATH(document_root) {
           $('*[class^="malt-pagination-Pagination-link-"]').length - 1
         ];
         buttonToClick.click();
-        
       } else {
-       
         buttonToClick.click();
       }
     }, 5000);
